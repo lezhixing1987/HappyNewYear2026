@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>2026 新年快乐 - 家人团圆烟花夜</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+
+        /* 居中照片墙容器 */
+        .family-slideshow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 450px;  /* 稍微加宽 */
+            height: 320px;
+            border: 6px solid rgba(255, 215, 0, 0.8);
+            border-radius: 15px;
+            overflow: hidden;
+            z-index: 2000;
+            box-shadow: 0 0 40px rgba(255, 215, 0, 0.4);
+            background-color: #222;
+        }
+
+        .family-slideshow img {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            transition: opacity 1.5s ease-in-out;
+        }
+
+        .family-slideshow img.active {
+            opacity: 1;
+        }
+
+        /* 标题文字移动到上方 */
+        .title {
+            position: absolute;
+            width: 100%;
+            top: 8%;
+            text-align: center;
+            color: gold;
+            font-size: 3.5em;
+            text-shadow: 0 0 15px red;
+            pointer-events: none;
+            z-index: 1000;
+            letter-spacing: 5px;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        .hint {
+            position: absolute;
+            bottom: 30px;
+            width: 100%;
+            text-align: center;
+            color: gold;
+            font-size: 1.2em;
+            opacity: 0.8;
+            z-index: 1000;
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink {
+            0% { opacity: 0.3; }
+            50% { opacity: 1; }
+            100% { opacity: 0.3; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="family-slideshow" id="slideshow">
+        <img src="images/f01.jpg" class="active">
+        <img src="images/f02.jpg">
+        <img src="images/f03.jpg"> 
+        <img src="images/f04.jpg">
+        <img src="images/f05.jpg">
+        <img src="images/f06.jpg">
+        <img src="images/f07.jpg">
+        <img src="images/f08.jpg">
+    </div>
+
+    <div class="title">家和万事兴 · 2026 新年快乐</div>
+    <div class="hint">点击屏幕任意位置开启音乐</div>
+
+    <canvas id="canvas"></canvas>
+
+    <audio id="bgMusic" loop>
+        <source src="sounds/HappyNewYear.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="fireworkSound">
+        <source src="sounds/HappyNewYear.mp3" type="audio/mpeg">
+    </audio> 
+
+    <script>
+        // 轮播逻辑
+        const imgs = document.querySelectorAll('#slideshow img');
+        let currentImgIndex = 0;
+        setInterval(() => {
+            imgs[currentImgIndex].classList.remove('active');
+            currentImgIndex = (currentImgIndex + 1) % imgs.length;
+            imgs[currentImgIndex].classList.add('active');
+        }, 4000);
+
+        // 烟花画布逻辑
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const bgMusic = document.getElementById('bgMusic');
+        const fireworkSound = document.getElementById('fireworkSound');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        document.addEventListener('mousedown', (e) => {
+            bgMusic.play();
+            createFirework(e.clientX, e.clientY);
+        });
+
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.velocity = {
+                    x: (Math.random() - 0.5) * 10,
+                    y: (Math.random() - 0.5) * 10
+                };
+                this.alpha = 1;
+                this.friction = 0.96;
+            }
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = this.color;
+                ctx.fill();
+                ctx.restore();
+            }
+            update() {
+                this.velocity.x *= this.friction;
+                this.velocity.y *= this.friction;
+                this.velocity.y += 0.12;
+                this.x += this.velocity.x;
+                this.y += this.velocity.y;
+                this.alpha -= 0.012;
+            }
+        }
+
+        let particles = [];
+
+        function createFirework(x, y) {
+            const color = `hsl(${Math.random() * 360}, 100%, 60%)`;
+            for (let i = 0; i < 60; i++) {
+                particles.push(new Particle(x, y, color));
+            }
+            fireworkSound.currentTime = 0;
+            fireworkSound.play().catch(()=>{});
+        }
+
+        function animate() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            particles.forEach((p, i) => {
+                if (p.alpha > 0) {
+                    p.update();
+                    p.draw();
+                } else {
+                    particles.splice(i, 1);
+                }
+            });
+            requestAnimationFrame(animate);
+        }
+
+        setInterval(() => {
+            createFirework(Math.random() * canvas.width, Math.random() * canvas.height * 0.6);
+        }, 1000);
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        animate();
+    </script>
+</body>
+</html>
